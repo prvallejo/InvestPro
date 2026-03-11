@@ -85,6 +85,7 @@
                     <label class="text-xs font-black text-slate-800 uppercase underline decoration-blue-600">3. Plan APV</label>
                     <input type="checkbox" id="checkAPV" class="check-custom" onchange="toggleBox('boxAPV', this.checked)">
                 </div>
+                <!-- Iniciado como oculto (hidden) -->
                 <div id="boxAPV" class="hidden space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -273,7 +274,7 @@
 
         function toggleBox(id, show) {
             const el = document.getElementById(id);
-            el.classList.toggle('hidden', !show);
+            if(el) el.classList.toggle('hidden', !show);
         }
 
         function updateLabel(check, labelId) {
@@ -308,43 +309,39 @@
         }
 
         function limpiarCampos() {
-            // 1. Limpiar todos los inputs de texto
+            // Limpiar inputs
             const inputs = document.querySelectorAll('input[type="text"]');
             inputs.forEach(input => input.value = "");
             
-            // 2. Limpieza Plan APV: Ahora DESMARCADO al limpiar
+            // Reset APV - Desmarcado y oculto
             const checkAPV = document.getElementById('checkAPV');
             checkAPV.checked = false; 
-            toggleBox('boxAPV', false); // Ocultamos el panel
-            document.getElementById('montoAPV').value = ""; 
+            toggleBox('boxAPV', false);
             document.getElementById('regimenAPV').selectedIndex = 1;
             document.getElementById('fondoAPV').selectedIndex = 1;
             
-            // 3. Limpiar Inversión Inicial
+            // Reset Inversión Inicial
             const checkInv = document.getElementById('checkInv');
             checkInv.checked = false;
             toggleBox('boxInv', false);
-            document.getElementById('montoInv').value = "";
 
-            // 4. Limpiar Otros Activos
+            // Reset Otros Activos
             const checksOtros = ['checkAcc', 'checkDAP', 'checkETFs'];
             checksOtros.forEach(id => {
                 const c = document.getElementById(id);
                 c.checked = false;
                 updateLabel(c, id.replace('check', 'lbl'));
-                const inputId = 'monto' + id.replace('check', '');
-                if(document.getElementById(inputId)) document.getElementById(inputId).value = "";
             });
 
-            // 5. Resetear sueldo y select de horizonte
+            // Reset otros valores
             document.getElementById('sueldoBruto').value = "";
             document.getElementById('horizonte').value = "10";
 
-            // 6. Ocultar alertas y resultados
+            // Ocultar resultados y avisos
             document.getElementById('msgAPV').classList.add('hidden');
             document.getElementById('resultados').classList.add('hidden');
             
-            // 7. Resetear botón limpiar
+            // Inhabilitar botón limpiar
             const btn = document.getElementById('btnLimpiar');
             btn.disabled = true;
             btn.className = "px-8 bg-white border-2 border-slate-200 text-slate-400 font-black rounded-xl uppercase text-xs disabled:opacity-50";
@@ -361,4 +358,12 @@
             const horizonte = parseInt(document.getElementById('horizonte').value);
             const apvM = document.getElementById('checkAPV').checked ? getRaw('montoAPV') : 0;
             const tasa = parseFloat(document.getElementById('fondoAPV').value);
-           
+            const regimen = document.getElementById('regimenAPV').value;
+            const reinvierte = document.getElementById('reinvierteTax').checked && regimen === 'B';
+            
+            let saldo = 0;
+            let inversionTotal = 0;
+            let taxTotal = 0;
+            
+            let dataChart = [];
+        
