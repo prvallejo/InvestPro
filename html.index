@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Libertad65 v9.9.2 - Ingeniería Patrimonial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary: #2563eb; --secondary: #1e293b; }
+        body { background-color: #f8fafc; font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; transition: all 0.3s ease; }
+        .input-field { width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; font-size: 15px; font-weight: 600; }
+        .input-field:focus { outline: none; border: 2px solid var(--primary); }
+        .label-pro { display: block; text-transform: uppercase; font-size: 10px; font-weight: 800; color: #64748b; margin-bottom: 4px; }
+        .check-custom { width: 1.2rem; height: 1.2rem; cursor: pointer; accent-color: var(--primary); }
+        
+        #resTotal { font-size: clamp(1.8rem, 8vw, 3.2rem); line-height: 1; letter-spacing: -0.05em; }
+
+        @media print { 
+            .no-print { display: none !important; } 
+            body { padding: 0; background: white; }
+            .card { border: 1px solid #eee !important; box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto">
+        <!-- Header con tu nombre como Constructor Civil -->
+        <header class="bg-[#1e293b] p-6 rounded-2xl text-white shadow-xl mb-8 flex flex-col md:flex-row justify-between items-center border-b-4 border-blue-600">
+            <div class="text-center md:text-left">
+                <h1 class="text-3xl font-black tracking-tighter text-blue-400">LIBERTAD65 <span class="text-white text-xl">v9.9.2</span></h1>
+                <p class="text-slate-400 text-[10px] font-bold tracking-[0.4em] uppercase">Patricio Vallejo | Constructor Civil</p>
+            </div>
+            <div class="text-right mt-4 md:mt-0">
+                <p class="text-[10px] uppercase text-slate-400 font-bold">Simulación: <span id="fechaHoy" class="text-white"></span></p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Entradas -->
+            <div class="lg:col-span-5 space-y-6 no-print">
+                
+                <!-- Horizonte y Sueldo -->
+                <div class="card p-6 border-l-4 border-l-orange-500">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="label-pro">Sueldo Bruto ($)</label>
+                            <input type="text" id="sueldoBruto" class="input-field" placeholder="0" oninput="formatCurrency(this)">
+                        </div>
+                        <div>
+                            <label class="label-pro">Horizonte (Años)</label>
+                            <input type="number" id="horizonte" class="input-field" placeholder="0">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1. Inversión Inicial -->
+                <div class="card p-5 border-l-4 border-l-slate-400">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-xs font-black text-slate-800 uppercase">1. Capital Inicial (Semilla)</label>
+                        <input type="checkbox" id="checkInv" class="check-custom" onchange="toggleBox('boxInv', this.checked)">
+                    </div>
+                    <div id="boxInv" class="hidden pt-2 border-t space-y-3">
+                        <input type="text" id="montoInv" class="input-field" placeholder="Monto Único Inicial ($)" oninput="formatCurrency(this)">
+                        <select id="fondoSemilla" class="input-field">
+                            <option value="0.07">Fondo A (Moderado 7%)</option>
+                            <option value="0.05">Fondo B (Conservador 5%)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 2. Estrategia APV -->
+                <div class="card p-5 border-l-4 border-l-blue-500">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-xs font-black text-slate-800 uppercase">2. Estrategia APV</label>
+                        <input type="checkbox" id="checkAPV" class="check-custom" onchange="toggleBox('boxAPV', this.checked)">
+                    </div>
+                    <div id="boxAPV" class="hidden space-y-4 pt-2 border-t">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="montoAPV" class="input-field flex-1 text-blue-700" placeholder="Monto APV ($)" oninput="formatCurrency(this)">
+                                <div class="flex flex-col items-center">
+                                    <input type="checkbox" id="checkAPVRecurrente" class="check-custom" checked onchange="updateLabel('checkAPVRecurrente', 'lblAPV')">
+                                    <span class="text-[8px] font-bold text-blue-600 uppercase">Aporte</span>
+                                </div>
+                            </div>
+                            <p id="lblAPV" class="text-[9px] font-bold text-blue-600 uppercase italic">Recurrente mensual</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-2">
+                            <select id="regimenAPV" class="input-field">
+                                <option value="A">Reg. A (15%)</option>
+                                <option value="B" selected>Reg. B (Tax)</option>
+                            </select>
+                            <select id="fondoAPV" class="input-field">
+                                <option value="0.07">Fondo A (7%)</option>
+                                <option value="0.05">Fondo B (5%)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Otros Activos -->
+                <div class="card p-5 border-l-4 border-l-emerald-500">
+                    <label class="text-xs font-black text-slate-800 uppercase mb-4 block">3. Otros Activos</label>
+                    <div class="space-y-4">
+                        <!-- Acciones -->
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="montoAcc" class="input-field flex-1" placeholder="Acciones / ETFs ($)" oninput="formatCurrency(this)">
+                                <div class="flex flex-col items-center">
+                                    <input type="checkbox" id="checkAcc" class="check-custom" onchange="updateLabel('checkAcc', 'lblAcc')">
+                                    <span class="text-[8px] font-bold text-slate-400 uppercase">Tipo</span>
+                                </div>
+                            </div>
+                            <p id="lblAcc" class="text-[9px] font-bold text-slate-400 uppercase">Único al inicio</p>
+                        </div>
+                        <!-- Cripto -->
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="montoETFs" class="input-field flex-1" placeholder="Cripto / Alt ($)" oninput="formatCurrency(this)">
+                                <div class="flex flex-col items-center">
+                                    <input type="checkbox" id="checkETFs" class="check-custom" onchange="updateLabel('checkETFs', 'lblETFs')">
+                                    <span class="text-[8px] font-bold text-slate-400 uppercase">Tipo</span>
+                                </div>
+                            </div>
+                            <p id="lblETFs" class="text-[9px] font-bold text-slate-400 uppercase">Único al inicio</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="calcular()" class="w-full bg-blue-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-blue-700 transition-all uppercase text-sm">Calcular Proyección</button>
+            </div>
+
+            <!-- Resultados -->
+            <div class="lg:col-span-7 space-y-6">
+                <!-- Gráfico -->
+                <div class="card p-6 h-[300px]">
+                    <canvas id="chartPatrimonio"></canvas>
+                </div>
+
+                <!-- Patrimonio Proyectado Estilo Captura -->
+                <div class="card bg-[#0f172a] text-white p-8 md:p-12 border-r-8 border-r-blue-500 relative">
+                    <p class="text-blue-400 text-[10px] font-black uppercase tracking-[0.4em] mb-4">Patrimonio Proyectado</p>
+                    <div class="flex items-baseline">
+                        <span class="text-3xl font-bold text-slate-500 mr-2">$</span>
+                        <span id="resTotal" class="font-black">0</span>
+                    </div>
+                    <p class="text-slate-500 text-[10px] mt-6 leading-relaxed max-w-xs">Cálculo basado en rentabilidad compuesta variable según fondos seleccionados.</p>
+                </div>
+
+                <!-- Mini Reporte -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="card p-4">
+                        <p class="label-pro">Total Capitalizado</p>
+                        <p class="text-xl font-black text-slate-700">$<span id="repInvertido">0</span></p>
+                    </div>
+                    <div class="card p-4">
+                        <p class="label-pro">Rentabilidad (ROI)</p>
+                        <p class="text-xl font-black text-emerald-600"><span id="repROI">0</span>%</p>
+                    </div>
+                </div>
+                
+                <button onclick="window.print()" class="w-full border-2 border-slate-200 text-slate-600 font-bold py-4 rounded-xl text-xs uppercase hover:bg-slate-50 transition-all">Exportar Reporte Patrimonial</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let myChart;
+        document.getElementById('fechaHoy').innerText = new Date().toLocaleDateString('es-CL');
+
+        // Formateador de miles para los INPUTS
+        function formatCurrency(input) {
+            let val = input.value.replace(/\D/g, "");
+            if (val !== "") {
+                input.value = new Intl.NumberFormat('es-CL').format(val);
+            }
+        }
+
+        // Obtener valor limpio (sin puntos)
+        function getRaw(id) {
+            const el = document.getElementById(id);
+            if(!el) return 0;
+            return parseFloat(el.value.replace(/\./g, "")) || 0;
+        }
+
+        // Formateador para mostrar resultados finales con puntos de miles
+        function formatFinal(num) {
+            return new Intl.NumberFormat('es-CL').format(Math.round(num));
+        }
+
+        function toggleBox(id, show) {
+            document.getElementById(id).classList.toggle('hidden', !show);
+        }
+
+        // Cambiar texto de etiquetas según Checkbox
+        function updateLabel(checkId, labelId) {
+            const check = document.getElementById(checkId).checked;
+            const lbl = document.getElementById(labelId);
+            if(checkId === 'checkAPVRecurrente') {
+                lbl.innerText = check ? "Recurrente mensual" : "Aporte único inicial";
+            } else {
+                lbl.innerText = check ? "Recurrente mensual" : "Único al inicio";
+            }
+            lbl.className = check ? "text-[9px] font-bold text-blue-600 uppercase italic" : "text-[9px] font-bold text-slate-400 uppercase italic";
+        }
+
+        function calcular() {
+            const sueldo = getRaw('sueldoBruto');
+            const horizonte = parseInt(document.getElementById('horizonte').value) || 0;
+            if(sueldo <= 0 || horizonte <= 0) return;
+
+            let totalAportado = 0;
+            let saldoFinal = 0;
+            const meses = horizonte * 12;
+
+            // 1. Semilla
+            if(document.getElementById('checkInv').checked) {
+                const m = getRaw('montoInv');
+                const r = parseFloat(document.getElementById('fondoSemilla').value);
+                totalAportado += m;
+                saldoFinal += m * Math.pow(1 + r, horizonte);
+            }
+
+            // 2. APV
+            if(document.getElementById('checkAPV').checked) {
+                const mAPV = getRaw('montoAPV');
+                const rA = parseFloat(document.getElementById('fondoAPV').value);
+                const rM = Math.pow(1 + rA, 1/12) - 1;
+                if(document.getElementById('checkAPVRecurrente').checked) {
+                    totalAportado += (mAPV * meses);
+                    saldoFinal += mAPV * ((Math.pow(1 + rM, meses) - 1) / rM);
+                } else {
+                    totalAportado += mAPV;
+                    saldoFinal += mAPV * Math.pow(1 + rA, horizonte);
+                }
+            }
+
+            // 3. Otros
+            const otros = [
+                { id: 'montoAcc', check: 'checkAcc', r: 0.08 },
+                { id: 'montoETFs', check: 'checkETFs', r: 0.12 }
+            ];
+            otros.forEach(o => {
+                const m = getRaw(o.id);
+                if(m > 0) {
+                    const isMensual = document.getElementById(o.check).checked;
+                    const rM = Math.pow(1 + o.r, 1/12) - 1;
+                    if(isMensual) {
+                        totalAportado += (m * meses);
+                        saldoFinal += m * ((Math.pow(1 + rM, meses) - 1) / rM);
+                    } else {
+                        totalAportado += m;
+                        saldoFinal += m * Math.pow(1 + o.r, horizonte);
+                    }
+                }
+            });
+
+            // Mostrar Resultados con separador de miles
+            document.getElementById('resTotal').innerText = formatFinal(saldoFinal);
+            document.getElementById('repInvertido').innerText = formatFinal(totalAportado);
+            document.getElementById('repROI').innerText = totalAportado > 0 ? ((saldoFinal/totalAportado - 1)*100).toFixed(1) : 0;
+
+            updateChart(horizonte, saldoFinal);
+        }
+
+        function updateChart(anos, total) {
+            const ctx = document.getElementById('chartPatrimonio').getContext('2d');
+            if(myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: anos + 1}, (_, i) => "Año " + i),
+                    datasets: [{
+                        label: 'Evolución Patrimonio',
+                        data: Array.from({length: anos + 1}, (_, i) => (total/anos)*i),
+                        borderColor: '#2563eb',
+                        borderWidth: 4,
+                        pointRadius: 0,
+                        fill: true,
+                        backgroundColor: 'rgba(37, 99, 235, 0.05)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { display: false }, x: { grid: { display: false } } }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
